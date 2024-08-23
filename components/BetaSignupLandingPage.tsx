@@ -37,7 +37,18 @@ export function BetaSignupLandingPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Submitted:', { email, companyCategory, businessName })
+    if (step < 3) {
+      setStep(step + 1)
+    } else {
+      console.log('Submitted:', { email, companyCategory, businessName })
+      // Here you would typically send the data to your backend
+    }
+  }
+
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1)
+    }
   }
 
   const fadeRef1 = useFadeIn()
@@ -86,20 +97,64 @@ export function BetaSignupLandingPage() {
               </p>
               <div className="w-full max-w-md space-y-4 mt-4">
                 <form onSubmit={handleSubmit} className="space-y-3">
-                  <div className="flex space-x-2">
-                    <Input
-                      id="email"
-                      placeholder="Enter your email"
-                      required
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="bg-white text-black flex-grow text-base py-2 px-3 rounded-l-md"
-                    />
-                    <Button type="submit" className="bg-[#35184c] text-white hover:bg-[#241a43] text-base py-2 px-4 rounded-r-md">
-                      Get Started
-                    </Button>
-                  </div>
+                  {step === 1 && (
+                    <div className="flex space-x-2">
+                      <Input
+                        id="email"
+                        placeholder="Enter your email"
+                        required
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="bg-white text-black flex-grow text-base py-2 px-3 rounded-l-md"
+                      />
+                      <Button type="submit" className="bg-[#35184c] text-white hover:bg-[#241a43] text-base py-2 px-4 rounded-r-md">
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                  {step === 2 && (
+                    <div className="space-y-2">
+                      <Select value={companyCategory} onValueChange={setCompanyCategory}>
+                        <SelectTrigger className="w-full bg-white text-black">
+                          <SelectValue placeholder="Select company type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="startup">Startup</SelectItem>
+                          <SelectItem value="sme">SME</SelectItem>
+                          <SelectItem value="enterprise">Enterprise</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="flex space-x-2">
+                        <Button type="button" onClick={handleBack} className="bg-gray-500 text-white hover:bg-gray-600">
+                          Back
+                        </Button>
+                        <Button type="submit" className="bg-[#35184c] text-white hover:bg-[#241a43] flex-grow">
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {step === 3 && (
+                    <div className="space-y-2">
+                      <Input
+                        id="businessName"
+                        placeholder="Enter your business name"
+                        required
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        className="bg-white text-black w-full text-base py-2 px-3 rounded-md"
+                      />
+                      <div className="flex space-x-2">
+                        <Button type="button" onClick={handleBack} className="bg-gray-500 text-white hover:bg-gray-600">
+                          Back
+                        </Button>
+                        <Button type="submit" className="bg-[#35184c] text-white hover:bg-[#241a43] flex-grow">
+                          Submit
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </form>
                 <p className="text-xs text-gray-400 text-center">
                   Try it free for 30 days. Cancel anytime.
