@@ -21,10 +21,15 @@ export function BetaSignupLandingPage() {
   const [businessName, setBusinessName] = useState('')
   const [step, setStep] = useState(1)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [headerOpacity, setHeaderOpacity] = useState(0)
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
+      const scrollPosition = window.scrollY
+      const maxScroll = 200 // Adjust this value to control how quickly the header fades to black
+      const newOpacity = Math.min(scrollPosition / maxScroll, 1)
+      setHeaderOpacity(newOpacity)
+      setIsScrolled(scrollPosition > 10)
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
@@ -44,7 +49,15 @@ export function BetaSignupLandingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-[#241a43] to-[#35184c] text-white">
       {/* Header */}
-      <header className={`fixed top-0 left-0 right-0 z-50 bg-transparent px-4 lg:px-6 flex items-center transition-all duration-300 ${isScrolled ? 'h-16' : 'h-20'}`}>
+      <header 
+        className={`fixed top-0 left-0 right-0 z-50 px-4 lg:px-6 flex items-center transition-all duration-300 ${
+          isScrolled ? 'h-16' : 'h-20'
+        }`}
+        style={{
+          backgroundColor: `rgba(0, 0, 0, ${headerOpacity})`,
+          boxShadow: headerOpacity > 0 ? `0 2px 4px rgba(0,0,0,${headerOpacity * 0.1})` : 'none'
+        }}
+      >
         <Link className="flex items-center justify-center" href="#">
           <img 
             src="https://ratingsrep.com/includes/assets/logo-web.svg" 
