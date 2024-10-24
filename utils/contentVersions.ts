@@ -54,11 +54,11 @@ export type Content = {
       ],
       seeInActionTitle: "See Ratings Rep in Action",
       seeInActionDescription: "Get a glimpse of what Ratings Rep can do for your business. Download a sample report and see the insights our AI provides.",
-      downloadSampleReportButtonText: "Download Sample Report",
+      downloadSampleReportButtonText: "Coming Soon",
       downloadSampleReportNote: "Note: Actual reports will be customized to your business's data and needs.",
       unlockAITitle: "Unlock Full AI Access",
       unlockAIDescription: "Want full access to our AI dashboard? It's simple! Refer just one business to join our beta, and you'll unlock all our advanced features. The more you refer, the more you gain!",
-      referFriendButtonText: "Refer a Friend and Unlock AI"
+      referFriendButtonText: "Coming Soon"
     },
     v2: {
       heroTitle: "Empower Your Agency with Ratings Rep Beta",

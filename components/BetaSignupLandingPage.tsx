@@ -7,15 +7,23 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { CheckIcon } from "@radix-ui/react-icons";
 
-import { contentVersions, getVersionFromParams } from  "../utils/contentVersions";
+import {
+  contentVersions,
+  getVersionFromParams,
+} from "../utils/contentVersions";
 import { useFadeIn } from "../hooks/useFadeIn";
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 import React from "react";
 
 // Supabase client setup
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://yngamsavcpxuzywuauir.supabase.co';
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://yngamsavcpxuzywuauir.supabase.co";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_KEY;
-console.log(supabaseKey);
+
+if (!supabaseKey) {
+  console.error("Supabase key is undefined. Check your environment variables.");
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey!);
 
@@ -25,10 +33,14 @@ export function BetaSignupLandingPage() {
   const content = contentVersions[version];
 
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
   const [headerOpacity, setHeaderOpacity] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -43,39 +55,91 @@ export function BetaSignupLandingPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmitEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitMessage("");
 
     try {
-      // First, check if the email already exists
       const { data: existingEmails, error: checkError } = await supabase
-        .from('Early Access')
-        .select('email')
-        .eq('email', email)
+        .from("EA_Copy")
+        .select("id, email")
+        .eq("email", email)
         .limit(1);
 
       if (checkError) throw checkError;
 
       if (existingEmails && existingEmails.length > 0) {
         setSubmitMessage("This email is already signed up for early access.");
+        setIsSubmitting(false);
         return;
       }
 
-      // If email doesn't exist, insert it
       const { data, error: insertError } = await supabase
-        .from('Early Access')
-        .insert([{ email: email }])
+        .from("EA_Copy")
+        .insert([{ email }])
         .select();
 
       if (insertError) throw insertError;
 
-      console.log("Inserted data:", data);
-      setSubmitMessage("Thank you for signing up for early access!");
-      setEmail("");
+      if (data && data[0]) {
+        setUserId(data[0].id);
+        setStep(2);
+      }
     } catch (error) {
-      console.error("Error:", error);
+      if (error instanceof Error) {
+        setSubmitMessage(`Error: ${error.message}`);
+      } else {
+        setSubmitMessage("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitAll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitMessage("");
+
+    try {
+      if (!userId) {
+        throw new Error("User ID not found");
+      }
+
+      let { data, error: upsertError } = await supabase
+        .from("EA_Copy")
+        .upsert({ id: userId, name: name, company_name: companyName })
+        .select();
+
+      if (upsertError) throw upsertError;
+
+      if (!data || data.length === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const { data: fetchedData, error: fetchError } = await supabase
+          .from("EA_Copy")
+          .select("*")
+          .eq("id", userId)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        if (!fetchedData) {
+          throw new Error("Row not found after upsert");
+        }
+
+        data = [fetchedData];
+      }
+
+      setSubmitMessage(
+        "Thank you for completing your early access registration!",
+      );
+      setEmail("");
+      setName("");
+      setCompanyName("");
+      setUserId(null);
+      setStep(1);
+    } catch (error) {
       if (error instanceof Error) {
         setSubmitMessage(`Error: ${error.message}`);
       } else {
@@ -128,32 +192,65 @@ export function BetaSignupLandingPage() {
             <div className="flex flex-col items-center space-y-4 text-center max-w-3xl mx-auto">
               <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
                 Join Our Wait List For
-                <span className="block mt-2 text-[#F1C40F]">Ratings Rep Exclusive Access</span>
+                <span className="block mt-2 text-[#F1C40F]">
+                  Ratings Rep Exclusive Access
+                </span>
               </h1>
               <p className="text-lg md:text-xl text-gray-300 max-w-xl">
-              Manage your online reputation with AI-driven insights. Be among the first to experience our revolutionary platform
+                Manage your online reputation with AI-driven insights. Be among
+                the first to experience our revolutionary platform
               </p>
               <div className="w-full max-w-md space-y-4 mt-4">
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <div className="flex space-x-2">
+                {step === 1 ? (
+                  <form onSubmit={handleSubmitEmail} className="space-y-3">
+                    <div className="flex space-x-2">
+                      <Input
+                        id="email"
+                        placeholder="Enter your email"
+                        required
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="bg-white text-black flex-grow text-base py-2 px-3 rounded-l-md"
+                      />
+                      <Button
+                        type="submit"
+                        className="bg-[#F1C40F] text-black hover:bg-[#E4B80E] text-base py-2 px-4 rounded-r-md"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? "Submitting..." : "Next"}
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <form onSubmit={handleSubmitAll} className="space-y-3">
                     <Input
-                      id="email"
-                      placeholder="Enter your email"
+                      id="name"
+                      placeholder="Enter your name"
                       required
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="bg-white text-black flex-grow text-base py-2 px-3 rounded-l-md"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="bg-white text-black w-full text-base py-2 px-3 rounded-md"
+                    />
+                    <Input
+                      id="companyName"
+                      placeholder="Enter your company name"
+                      required
+                      type="text"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      className="bg-white text-black w-full text-base py-2 px-3 rounded-md"
                     />
                     <Button
                       type="submit"
-                      className="bg-[#F1C40F] text-black hover:bg-[#E4B80E] text-base py-2 px-4 rounded-r-md"
+                      className="bg-[#F1C40F] text-black hover:bg-[#E4B80E] text-base py-2 px-4 rounded-md w-full"
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? "Submitting..." : "Join Waitlist"}
                     </Button>
-                  </div>
-                </form>
+                  </form>
+                )}
                 {submitMessage && (
                   <p className="text-sm text-center">{submitMessage}</p>
                 )}
